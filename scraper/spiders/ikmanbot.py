@@ -1,16 +1,17 @@
 import scrapy
 from urllib.parse import urljoin
 import logging
+import re
 
 class IkmanBot(scrapy.Spider):
     name = "ikmanbot"
-    # allowed_domains = ["https://ikman.lk"]
+    # allowed_domains = ["https ://ikman.lk"]
     start_urls = []
-    for i in range(1,30):
+    for i in range(300,500):
         start_urls.append("https://ikman.lk/en/ads/sri-lanka/cars-vehicles?page="+str(i))
     custom_settings = {
         'FEED_FORMAT': 'csv',
-        'FEED_URI': 'test.csv'
+        'FEED_URI': 'vehicles.csv'
     }
     logging.basicConfig(
         filename='log.txt',
@@ -31,13 +32,23 @@ class IkmanBot(scrapy.Spider):
         title = response.css('div.item-top h1::text').extract()[0]
         price = response.css('span.amount::text').extract()[0]
         properties = response.css('div.item-properties dl dt::text').extract()
+        breadcum = response.css("nav.ui-crumbs ol li a span::text").extract()
         values = response.css('div.item-properties dl dd::text').extract()
         print(properties)
-        print(len(properties))
+        print(values)
+        # exit(0)
         scraped_info = {
             'title': title,
-            'price': price
+            'price': price,
+            'district' : breadcum[2],
+            'town' : breadcum[3],
+            'main category': breadcum[4],
+            'sub category':breadcum[5]
         }
         for property in zip(properties,values):
-            scraped_info[property[0]] = property[1]
+
+            value = property[1].replace("cc","")
+            value = value.replace("km","")
+
+            scraped_info[property[0].replace(":","")] = value
         yield scraped_info
